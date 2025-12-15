@@ -153,12 +153,30 @@ public extension LocalConfigVertical {
     
     /**
      Defines the vertical size (in points) of the area that responds to dismissal drag gesture.
-     
-     Use this to control how much of the popup’s top/bottom region is draggable for dismiss gesture.
+
+     Use this to control how much of the popup's top/bottom region is draggable for dismiss gesture.
      A larger value allows dragging from a wider area.
-     
+
      ## Visualisation
      ![image](https://github.com/Mijick/Assets/blob/main/Framework%20Docs/Popups/bottom-popup-draggable-area.png?raw=true)
      */
     func dragGestureAreaSize(_ value: CGFloat) -> Self { self.dragGestureAreaSize = value; return self }
+}
+
+// MARK: Anchored
+public extension LocalConfigAnchored {
+    /// Distance of the popup from its edges.
+    func popupPadding(_ value: EdgeInsets) -> Self { self.popupPadding = value; return self }
+
+    /// Corner radius of the background of the active popup.
+    func cornerRadius(_ value: CGFloat) -> Self { self.cornerRadius = value; return self }
+
+    /// Background color of the popup.
+    func backgroundColor(_ color: Color) -> Self { self.backgroundColor = color; return self }
+
+    /// The color of the overlay covering the view behind the popup.
+    func overlayColor(_ color: Color) -> Self { self.overlayColor = color; return self }
+
+    /// If enabled, dismisses the active popup when touched outside its area.
+    func tapOutsideToDismissPopup(_ value: Bool) -> Self { self.isTapOutsideToDismissEnabled = value; return self }
 }

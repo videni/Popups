@@ -26,6 +26,12 @@ struct AnyPopupConfig: LocalConfig, Sendable { init() {}
     var isTapOutsideToDismissEnabled: Bool = false
     var isDragGestureEnabled: Bool = false
     var dragGestureAreaSize: CGFloat = 0
+
+    // MARK: Anchored-specific
+    var anchorFrame: CGRect = .zero
+    var originAnchor: PopupAnchorPoint = .bottom
+    var popupAnchor: PopupAnchorPoint = .top
+    var anchorOffset: CGPoint = .zero
 }
 
 // MARK: Initialize
@@ -42,5 +48,12 @@ extension AnyPopupConfig {
         self.isTapOutsideToDismissEnabled = config.isTapOutsideToDismissEnabled
         self.isDragGestureEnabled = config.isDragGestureEnabled
         self.dragGestureAreaSize = config.dragGestureAreaSize
+
+        // Anchored-specific properties
+        if let anchoredConfig = config as? LocalConfigAnchored {
+            self.originAnchor = anchoredConfig.originAnchor
+            self.popupAnchor = anchoredConfig.popupAnchor
+            self.anchorOffset = anchoredConfig.offset
+        }
     }
 }

@@ -130,3 +130,35 @@ public typealias CenterPopupConfig = LocalConfigCenter
  */
 public protocol BottomPopup: Popup { associatedtype Config = BottomPopupConfig }
 public typealias BottomPopupConfig = LocalConfigVertical.Bottom
+
+/**
+ The view to be displayed as an Anchored popup, positioned relative to a source view.
+
+ ## Optional Methods
+ - ``Popup/configurePopup(config:)-98ha0``
+ - ``Popup/onFocus()-loq5``
+ - ``Popup/onDismiss()-254h8``
+
+ ## Usage
+ ```swift
+ struct AnchoredPopupExample: AnchoredPopup {
+    func onFocus() { print("Popup is now active") }
+    func onDismiss() { print("Popup was dismissed") }
+    func configurePopup(config: AnchoredPopupConfig) -> AnchoredPopupConfig { config
+        .originAnchor(.bottom)
+        .popupAnchor(.top)
+        .offset(x: 0, y: 8)
+        .cornerRadius(12)
+    }
+    var body: some View {
+        Text("Hello Kitty")
+    }
+ }
+
+ // Present with anchor frame
+ Button("Show") {
+     Task { await AnchoredPopupExample().present(anchoredTo: buttonFrame) }
+ }
+ ```
+ */
+public protocol AnchoredPopup: Popup { associatedtype Config = AnchoredPopupConfig }

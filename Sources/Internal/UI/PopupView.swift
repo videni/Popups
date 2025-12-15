@@ -20,6 +20,7 @@ struct PopupView: View {
     private let topStackViewModel: VM.VerticalStack = .init(TopPopupConfig.self)
     private let centerStackViewModel: VM.CenterStack = .init(CenterPopupConfig.self)
     private let bottomStackViewModel: VM.VerticalStack = .init(BottomPopupConfig.self)
+    private let anchoredStackViewModel: VM.AnchoredStack = .init(AnchoredPopupConfig.self)
 
 
     init(rootView: any View, popupStack: PopupStack) {
@@ -61,6 +62,7 @@ private extension PopupView {
             createTopPopupStackView()
             createCenterPopupStackView()
             createBottomPopupStackView()
+            createAnchoredPopupStackView()
         }
     }
 }
@@ -79,6 +81,9 @@ private extension PopupView {
     }
     func createBottomPopupStackView() -> some View {
         PopupVerticalStackView(viewModel: bottomStackViewModel).zIndex(stack.priority.bottom)
+    }
+    func createAnchoredPopupStackView() -> some View {
+        PopupAnchoredStackView(viewModel: anchoredStackViewModel).zIndex(stack.priority.anchored)
     }
 }
 private extension PopupView {
@@ -119,7 +124,7 @@ private extension PopupView {
         await stack.modify(.removePopup(popup))
     }
     func updateViewModels(_ updateBuilder: @MainActor @escaping (any ViewModel) async -> ()) async {
-        for viewModel in [topStackViewModel, centerStackViewModel, bottomStackViewModel] { await updateBuilder(viewModel as! any ViewModel) }
+        for viewModel in [topStackViewModel, centerStackViewModel, bottomStackViewModel, anchoredStackViewModel] { await updateBuilder(viewModel as! any ViewModel) }
     }
 }
 private extension PopupView {

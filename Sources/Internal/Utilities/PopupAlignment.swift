@@ -15,6 +15,14 @@ enum PopupAlignment {
     case top
     case center
     case bottom
+    case anchored
+}
+
+// MARK: Anchor Point
+public enum PopupAnchorPoint: Sendable {
+    case topLeft, top, topRight
+    case left, center, right
+    case bottomLeft, bottom, bottomRight
 }
 
 // MARK: Initialize
@@ -23,6 +31,7 @@ extension PopupAlignment {
         case is TopPopupConfig.Type: self = .top
         case is CenterPopupConfig.Type: self = .center
         case is BottomPopupConfig.Type: self = .bottom
+        case is AnchoredPopupConfig.Type: self = .anchored
         default: fatalError()
     }}
 }
@@ -33,6 +42,7 @@ extension PopupAlignment {
         case .top: .bottom
         case .center: .center
         case .bottom: .top
+        case .anchored: .anchored
     }}
 }
 
@@ -42,10 +52,12 @@ extension PopupAlignment {
         case .top: .top
         case .center: .bottom
         case .bottom: .bottom
+        case .anchored: .top
     }}
     func toAlignment() -> Alignment { switch self {
         case .top: .top
         case .center: .center
         case .bottom: .bottom
+        case .anchored: .topLeading
     }}
 }

@@ -16,5 +16,6 @@ extension EdgeInsets {
         case .top: top
         case .center: 0
         case .bottom: bottom
+        case .anchored: 0
     }}
 }

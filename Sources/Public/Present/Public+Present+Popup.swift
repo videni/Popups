@@ -29,10 +29,39 @@ public extension Popup {
      ``SwiftUICore/View/dismissPopup(_:popupStackID:)-9mkd5``,
      ``SwiftUICore/View/dismissAllPopups(popupStackID:)``
      should be called with the same **popupStackID** as the one used here.
-     
+
      - Warning: To present multiple popups of the same type, set a unique identifier using the method ``Popup/setCustomID(_:)``.
      */
     @MainActor func present(popupStackID: PopupStackID = .shared) async { await PopupStack.fetch(id: popupStackID)?.modify(.insertPopup(.init(self))) }
+}
+
+// MARK: Anchored Popup Present
+public extension AnchoredPopup {
+    /**
+     Presents the anchored popup positioned relative to a source view frame.
+
+     - Parameters:
+        - anchorFrame: The frame of the source view to anchor the popup to (in global coordinates).
+        - popupStackID: The identifier registered in one of the application windows in which the popup is to be displayed.
+
+     - Important: The **anchorFrame** should be in global screen coordinates. Use `.frameReader` or `GeometryReader` to obtain the frame.
+
+     ## Usage
+     ```swift
+     @State private var buttonFrame: CGRect = .zero
+
+     Button("Show") {
+         Task { await MyAnchoredPopup().present(anchoredTo: buttonFrame) }
+     }
+     .frameReader { frame in
+         buttonFrame = frame
+     }
+     ```
+     */
+    @MainActor func present(anchoredTo anchorFrame: CGRect, popupStackID: PopupStackID = .shared) async {
+        let popup = await AnyPopup(self).updatedAnchorFrame(anchorFrame)
+        await PopupStack.fetch(id: popupStackID)?.modify(.insertPopup(popup))
+    }
 }
 
 // MARK: Configure Popup

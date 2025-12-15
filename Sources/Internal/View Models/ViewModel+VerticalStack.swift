@@ -40,7 +40,7 @@ private extension VM.VerticalStack {
     func getDragTranslationMultiplier() -> CGFloat { switch alignment {
         case .top: 1
         case .bottom: -1
-        case .center: fatalError()
+        case .center, .anchored: fatalError()
     }}
 }
 
@@ -93,7 +93,7 @@ private extension VM.VerticalStack {
         return switch alignment {
             case .top: calculateVerticalInnerPaddingAdhereEdge(safeAreaHeight: screen.safeArea.top, popupOuterPadding: activePopupProperties.outerPadding.top)
             case .bottom: calculateVerticalInnerPaddingCounterEdge(popupHeight: activePopupProperties.height ?? 0, safeArea: screen.safeArea.top)
-            case .center: fatalError()
+            case .center, .anchored: fatalError()
         }
     }
     func calculateBottomInnerPadding(popup: AnyPopup) -> CGFloat {
@@ -102,7 +102,7 @@ private extension VM.VerticalStack {
         return switch alignment {
             case .top: calculateVerticalInnerPaddingCounterEdge(popupHeight: activePopupProperties.height ?? 0, safeArea: screen.safeArea.bottom)
             case .bottom: calculateVerticalInnerPaddingAdhereEdge(safeAreaHeight: screen.safeArea.bottom, popupOuterPadding: activePopupProperties.outerPadding.bottom)
-            case .center: fatalError()
+            case .center, .anchored: fatalError()
         }
     }
     func calculateLeadingInnerPadding(popup: AnyPopup) -> CGFloat { switch popup.config.ignoredSafeAreaEdges.contains(.leading) {
@@ -143,12 +143,12 @@ private extension VM.VerticalStack {
     func calculateTopCornerRadius(_ cornerRadiusValue: CGFloat) -> CGFloat { switch alignment {
         case .top: activePopupProperties.outerPadding.top != 0 ? cornerRadiusValue : 0
         case .bottom: cornerRadiusValue
-        case .center: fatalError()
+        case .center, .anchored: fatalError()
     }}
     func calculateBottomCornerRadius(_ cornerRadiusValue: CGFloat) -> CGFloat { switch alignment {
         case .top: cornerRadiusValue
         case .bottom: activePopupProperties.outerPadding.bottom != 0 ? cornerRadiusValue : 0
-        case .center: fatalError()
+        case .center, .anchored: fatalError()
     }}
 }
 
@@ -165,7 +165,7 @@ extension VM.VerticalStack {
     func calculateActivePopupTranslationProgress() async -> CGFloat { guard let activePopupHeight = popups.last?.height else { return 0 }; return switch alignment {
         case .top: abs(min(activePopupProperties.gestureTranslation + (popups.last?.dragHeight ?? 0), 0)) / activePopupHeight
         case .bottom: max(activePopupProperties.gestureTranslation - (popups.last?.dragHeight ?? 0), 0) / activePopupHeight
-        case .center: fatalError()
+        case .center, .anchored: fatalError()
     }}
 }
 
@@ -237,7 +237,7 @@ private extension VM.VerticalStack {
         return switch alignment {
             case .top: min(activePopupProperties.gestureTranslation + lastPopupDragHeight, 0)
             case .bottom: max(activePopupProperties.gestureTranslation - lastPopupDragHeight, 0)
-            case .center: fatalError()
+            case .center, .anchored: fatalError()
         }
     }
     func calculateOffsetForStackedPopup(_ popup: AnyPopup) -> CGFloat {
@@ -246,7 +246,7 @@ private extension VM.VerticalStack {
         let alignmentMultiplier = switch alignment {
             case .top: 1.0
             case .bottom: -1.0
-            case .center: fatalError()
+            case .center, .anchored: fatalError()
         }
 
         return offsetValue * alignmentMultiplier
@@ -364,7 +364,7 @@ private extension VM.VerticalStack {
     func calculateDragExtremeValue(_ value1: CGFloat, _ value2: CGFloat) -> CGFloat { switch alignment {
         case .top: min(value1, value2)
         case .bottom: max(value1, value2)
-        case .center: fatalError()
+        case .center, .anchored: fatalError()
     }}
 }
 

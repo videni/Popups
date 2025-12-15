@@ -15,9 +15,10 @@ struct StackPriority: Equatable, Sendable {
     var top: CGFloat { values[0] }
     var center: CGFloat { values[1] }
     var bottom: CGFloat { values[2] }
+    var anchored: CGFloat { values[3] }
     var overlay: CGFloat { 1 }
 
-    private var values: [CGFloat] = [0, 0, 0]
+    private var values: [CGFloat] = [0, 0, 0, 0]
 }
 
 // MARK: Reshuffled
@@ -26,6 +27,7 @@ extension StackPriority {
         case .top: reshuffled(0)
         case .center: reshuffled(1)
         case .bottom: reshuffled(2)
+        case .anchored: reshuffled(3)
         default: self
     }}
 }
