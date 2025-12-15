@@ -39,7 +39,7 @@ private extension PopupVerticalStackView {
             .scaleEffect(x: viewModel.calculateScaleX(for: popup))
             .focusSection_tvOS()
             .padding(viewModel.activePopupProperties.outerPadding)
-            .transition(transition)
+            .transition(getTransition(for: popup))
             .zIndex(viewModel.calculateZIndex())
             .onDragGesture(onChanged: viewModel.onPopupDragGestureChanged, onEnded: viewModel.onPopupDragGestureEnded, isEnabled: viewModel.dragGestureEnabled)
     }}
@@ -48,9 +48,10 @@ private extension PopupVerticalStackView {
 private extension PopupVerticalStackView {
     func getBackgroundColor(for popup: AnyPopup) -> Color { popup.config.backgroundColor }
     func getStackOverlayColor(for popup: AnyPopup) -> Color { stackOverlayColor.opacity(viewModel.calculateStackOverlayOpacity(for: popup)) }
+    func getTransition(for popup: AnyPopup) -> AnyTransition { popup.config.transition ?? defaultTransition }
 }
 private extension PopupVerticalStackView {
     var stackOverlayColor: Color { .black }
-    var transition: AnyTransition { .move(edge: viewModel.alignment.toEdge()) }
+    var defaultTransition: AnyTransition { .move(edge: viewModel.alignment.toEdge()) }
     var popupAlignment: Alignment { (!viewModel.alignment).toAlignment() }
 }

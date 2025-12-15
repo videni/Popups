@@ -26,6 +26,9 @@ public class LocalConfigVertical: LocalConfig { required public init() {}
     public var isTapOutsideToDismissEnabled: Bool = GlobalConfigContainer.vertical.isTapOutsideToDismissEnabled
     public var isDragGestureEnabled: Bool = GlobalConfigContainer.vertical.isDragGestureEnabled
     public var dragGestureAreaSize: CGFloat = GlobalConfigContainer.vertical.dragGestureAreaSize
+
+    // MARK: Transition
+    public var transition: AnyTransition? = nil
 }
 
 // MARK: Subclasses
