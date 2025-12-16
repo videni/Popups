@@ -33,6 +33,8 @@ struct AnyPopupConfig: LocalConfig, Sendable { init() {}
     var popupAnchor: PopupAnchorPoint = .top
     var anchorOffset: CGPoint = .zero
     var isTapOutsidePassThroughEnabled: Bool = false
+    // MARK: Transition
+    var transition: AnyTransition? = nil
 }
 
 // MARK: Initialize
@@ -56,6 +58,11 @@ extension AnyPopupConfig {
             self.popupAnchor = anchoredConfig.popupAnchor
             self.anchorOffset = anchoredConfig.offset
             self.isTapOutsidePassThroughEnabled = anchoredConfig.isTapOutsidePassThroughEnabled
+        }
+
+        // Vertical-specific properties (transition)
+        if let verticalConfig = config as? LocalConfigVertical {
+            self.transition = verticalConfig.transition
         }
     }
 }

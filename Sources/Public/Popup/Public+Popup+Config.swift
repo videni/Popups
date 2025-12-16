@@ -161,6 +161,21 @@ public extension LocalConfigVertical {
      ![image](https://github.com/Mijick/Assets/blob/main/Framework%20Docs/Popups/bottom-popup-draggable-area.png?raw=true)
      */
     func dragGestureAreaSize(_ value: CGFloat) -> Self { self.dragGestureAreaSize = value; return self }
+
+    /**
+     Sets a custom transition animation for the popup.
+
+     By default, vertical popups use `.move(edge:)` transition.
+     Use this to override with a custom transition like `.opacity`, `.scale`, or a combination.
+
+     ## Example
+     ```swift
+     func configurePopup(config: BottomPopupConfig) -> BottomPopupConfig {
+         config.transition(.opacity)  // Fade in/out instead of slide
+     }
+     ```
+     */
+    func transition(_ value: AnyTransition) -> Self { self.transition = value; return self }
 }
 
 // MARK: Anchored
