@@ -32,6 +32,7 @@ struct AnyPopupConfig: LocalConfig, Sendable { init() {}
     var originAnchor: PopupAnchorPoint = .bottom
     var popupAnchor: PopupAnchorPoint = .top
     var anchorOffset: CGPoint = .zero
+    var isTapOutsidePassThroughEnabled: Bool = false
 }
 
 // MARK: Initialize
@@ -54,6 +55,7 @@ extension AnyPopupConfig {
             self.originAnchor = anchoredConfig.originAnchor
             self.popupAnchor = anchoredConfig.popupAnchor
             self.anchorOffset = anchoredConfig.offset
+            self.isTapOutsidePassThroughEnabled = anchoredConfig.isTapOutsidePassThroughEnabled
         }
     }
 }

@@ -84,7 +84,8 @@ private extension VM.AnchoredStack {
 // MARK: Opacity
 extension VM.AnchoredStack {
     func calculateOpacity(for popup: AnyPopup) -> CGFloat {
-        popups.last == popup ? 1 : 0
+        // AnchoredPopup supports multiple popups displayed simultaneously, so all popups have opacity 1
+        1
     }
 }
 

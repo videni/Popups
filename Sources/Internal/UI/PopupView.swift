@@ -69,6 +69,7 @@ private extension PopupView {
 private extension PopupView {
     func createOverlayView() -> some View {
         getOverlayColor()
+            .contentShape(Rectangle())
             .zIndex(stack.priority.overlay)
             .animation(.linear, value: stack.popups)
             .onTapGesture(perform: onTap)

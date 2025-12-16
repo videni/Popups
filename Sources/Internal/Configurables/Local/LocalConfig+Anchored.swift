@@ -21,6 +21,7 @@ public class LocalConfigAnchored: LocalConfig { required public init() {}
     public var originAnchor: PopupAnchorPoint = .bottom
     public var popupAnchor: PopupAnchorPoint = .top
     public var offset: CGPoint = .zero
+    public var isTapOutsidePassThroughEnabled: Bool = false
 
     // MARK: Inactive Variables (inherited from LocalConfig protocol)
     public var ignoredSafeAreaEdges: Edge.Set = []
@@ -43,6 +44,10 @@ public extension LocalConfigAnchored {
 
     /// Sets additional offset from the calculated position
     func offset(x: CGFloat = 0, y: CGFloat = 0) -> Self { self.offset = CGPoint(x: x, y: y); return self }
+
+    /// Enables touch pass-through when tapping outside the popup
+    /// When enabled, touches outside the popup are passed to underlying views instead of being blocked
+    func tapOutsidePassThrough(_ enabled: Bool) -> Self { self.isTapOutsidePassThroughEnabled = enabled; return self }
 }
 
 // MARK: - Public Type Alias

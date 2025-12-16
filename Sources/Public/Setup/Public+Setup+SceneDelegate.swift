@@ -95,14 +95,14 @@ fileprivate class Window: UIWindow {
 // MARK: Implementation
 extension Window {
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-        if #available(iOS 26, *) { point_iOS26(inside: point, with: event) }
-        else if #available(iOS 18, *) { point_iOS18(inside: point, with: event) }
-        else { point_iOS17(inside: point, with: event) }
+        if #available(iOS 26, *) { return point_iOS26(inside: point, with: event) }
+        else if #available(iOS 18, *) { return point_iOS18(inside: point, with: event) }
+        else { return point_iOS17(inside: point, with: event) }
     }
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-        if #available(iOS 26, *) { hitTest_iOS26(point, with: event) }
-        else if #available(iOS 18, *) { hitTest_iOS18(point, with: event) }
-        else { hitTest_iOS17(point, with: event) }
+        if #available(iOS 26, *) { return hitTest_iOS26(point, with: event) }
+        else if #available(iOS 18, *) { return hitTest_iOS18(point, with: event) }
+        else { return hitTest_iOS17(point, with: event) }
     }
     override func resignKey() {
         super.resignKey()
@@ -130,24 +130,76 @@ private extension Window {
 
 // MARK: Hit Test
 private extension Window {
+    enum AnchoredHitTestResult {
+        case hit(UIView)      // Touch inside AnchoredPopup
+        case passThrough      // Pass through to underlying views
+        case block            // Block touch
+        case noAnchoredPopup  // No AnchoredPopup displayed
+    }
+
+    func handleAnchoredPopupHitTest(_ point: CGPoint, with event: UIEvent?) -> AnchoredHitTestResult {
+        guard let container = AnchoredPopupsContainer.shared, !container.subviews.isEmpty else {
+            return .noAnchoredPopup
+        }
+
+        let convertedPoint = convert(point, to: container)
+        if let hit = container.hitTest(convertedPoint, with: event) {
+            return .hit(hit)
+        }
+
+        // Touch outside AnchoredPopup - check if pass-through is enabled
+        let anchoredPopups = PopupStackContainer.stacks.first?.popups.filter { $0.config.alignment == .anchored }
+        if let lastAnchored = anchoredPopups?.last,
+           lastAnchored.config.isTapOutsidePassThroughEnabled {
+            return .passThrough
+        }
+        return .block
+    }
+
     @available(iOS 26, *)
     func hitTest_iOS26(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-        guard let rootView = self.rootViewController?.view else { return nil }
-        guard let isDismissParameterEmpty = PopupStackContainer.stacks.first?.popups.last?.config.isTapOutsideToDismissEnabled else { return nil }
-        
-        let pointInRootView = self.convert(point, to: rootView)
+        switch handleAnchoredPopupHitTest(point, with: event) {
+        case .hit(let view): return view
+        case .passThrough: return nil
+        case .block: return rootViewController?.view
+        case .noAnchoredPopup: break
+        }
+
+        // No AnchoredPopup displayed, use original logic (for BottomPopup, CenterPopup, etc.)
+        guard let rootView = rootViewController?.view else { return nil }
+        guard PopupStackContainer.stacks.first?.popups.last != nil else { return nil }
+
+        let pointInRootView = convert(point, to: rootView)
         let hitView = rootView.hitTest(pointInRootView, with: event)
         let isTapOutsideToDismissEnabled = PopupStackContainer.stacks.first?.popups.last?.config.isTapOutsideToDismissEnabled ?? false
-        
-        if hitView == rootView || hitView == nil { return isTapOutsideToDismissEnabled ? rootView : hitView }
+
+        if hitView == rootView || hitView == nil {
+            return isTapOutsideToDismissEnabled ? rootView : hitView
+        }
         return hitView
     }
-  
+
     @available(iOS 18, *)
-        func hitTest_iOS18(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-            super.hitTest(point, with: event)
+    func hitTest_iOS18(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        switch handleAnchoredPopupHitTest(point, with: event) {
+        case .hit(let view): return view
+        case .passThrough: return nil
+        case .block: return rootViewController?.view
+        case .noAnchoredPopup: break
         }
+
+        guard let hit = super.hitTest(point, with: event) else { return nil }
+        return rootViewController?.view == hit ? nil : hit
+    }
+
     func hitTest_iOS17(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        switch handleAnchoredPopupHitTest(point, with: event) {
+        case .hit(let view): return view
+        case .passThrough: return nil
+        case .block: return rootViewController?.view
+        case .noAnchoredPopup: break
+        }
+
         guard let hit = super.hitTest(point, with: event) else { return nil }
         return rootViewController?.view == hit ? nil : hit
     }
