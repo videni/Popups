@@ -30,24 +30,36 @@ class AnchoredPopupsContainer: UIView {
         }
     }
 
-    /// Returns true only if touch is inside a popup frame
+    /// Returns true if touch should be handled by this container
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        // Inside popup frame
         for popup in popupModel.popups {
             if let frame = popupModel.frame(for: popup), frame.contains(point) {
                 return true
             }
         }
-        return false
+        // Outside popup - if not pass through, intercept event
+        if let lastPopup = popupModel.popups.last,
+           !lastPopup.config.isTapOutsidePassThroughEnabled {
+            return true
+        }
+        return false  // pass through
     }
 
-    /// Returns hit view only if touch is inside a popup frame, otherwise passes through
+    /// Returns hit view for touch handling
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        // Inside popup frame - forward to hosting controller
         for popup in popupModel.popups {
             if let frame = popupModel.frame(for: popup), frame.contains(point) {
                 return hostingController?.view.hitTest(point, with: event)
             }
         }
-        return nil
+        // Outside popup - if not pass through, forward to hosting controller (SwiftUI overlay handles)
+        if let lastPopup = popupModel.popups.last,
+           !lastPopup.config.isTapOutsidePassThroughEnabled {
+            return hostingController?.view.hitTest(point, with: event)
+        }
+        return nil  // pass through to shared overlay
     }
 
     /// Updates popups in the container
@@ -127,11 +139,33 @@ private class AnchoredPopupModel: ObservableObject {
 private struct AnchoredPopupContainerView: View {
     @ObservedObject var model: AnchoredPopupModel
 
+    private var shouldShowOverlay: Bool {
+        guard let lastPopup = model.popups.last else { return false }
+        // Show overlay when not pass through (to receive forwarded events from UIKit)
+        return !lastPopup.config.isTapOutsidePassThroughEnabled
+    }
+
     var body: some View {
         // Reference containerSize to trigger re-render when it changes
         let _ = model.containerSize
 
         ZStack(alignment: .topLeading) {
+            // Overlay for handling tap outside (when not pass through)
+            if shouldShowOverlay {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        // Only dismiss if dismiss is enabled
+                        if let lastPopup = model.popups.last,
+                           lastPopup.config.isTapOutsideToDismissEnabled {
+                            Task { @MainActor in
+                                await PopupStack.dismissLastPopup()
+                            }
+                        }
+                        // If dismiss = false, event is consumed but popup stays open
+                    }
+            }
+
             ForEach(model.popups, id: \.self) { popup in
                 let popupId = popup.id.rawValue
                 let frame = model.frame(for: popup)
