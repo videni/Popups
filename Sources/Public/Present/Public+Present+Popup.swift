@@ -10,6 +10,9 @@
 
 
 import SwiftUI
+#if os(iOS)
+import UIKit
+#endif
 
 public extension Popup {
     /**
@@ -32,7 +35,25 @@ public extension Popup {
 
      - Warning: To present multiple popups of the same type, set a unique identifier using the method ``Popup/setCustomID(_:)``.
      */
-    @MainActor func present(popupStackID: PopupStackID = .shared) async { await PopupStack.fetch(id: popupStackID)?.modify(.insertPopup(.init(self))) }
+    @MainActor func present(popupStackID: PopupStackID = .shared) async {
+        await PopupStack.fetch(id: popupStackID)?.modify(.insertPopup(.init(self)))
+        makePopupWindowKey()
+    }
+
+    #if os(iOS)
+    @MainActor private func makePopupWindowKey() {
+        // Find popup window by class name "MijickWindow"
+        for window in UIApplication.shared.windows {
+            let className = String(describing: type(of: window))
+            if className == "MijickWindow" {
+                window.makeKey()
+                return
+            }
+        }
+    }
+    #else
+    @MainActor private func makePopupWindowKey() {}
+    #endif
 }
 
 // MARK: Anchored Popup Present
@@ -65,7 +86,23 @@ public extension AnchoredPopup {
         }
         popup = popup.updatedAnchorFrame(anchorFrame)
         await PopupStack.fetch(id: popupStackID)?.modify(.insertPopup(popup))
+        makePopupWindowKey()
     }
+
+    #if os(iOS)
+    @MainActor private func makePopupWindowKey() {
+        // Find popup window by class name "MijickWindow"
+        for window in UIApplication.shared.windows {
+            let className = String(describing: type(of: window))
+            if className == "MijickWindow" {
+                window.makeKey()
+                return
+            }
+        }
+    }
+    #else
+    @MainActor private func makePopupWindowKey() {}
+    #endif
 }
 
 // MARK: Configure Popup
