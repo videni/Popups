@@ -67,7 +67,7 @@ extension PopupSceneDelegate {
             .registerPopups(configBuilder: configBuilder)
         )
         hostingController.view.backgroundColor = .clear
-        window = Window(scene: self, windowScene: windowScene)
+        window = MijickWindow(scene: self, windowScene: windowScene)
         window?.rootViewController = hostingController
         window?.isHidden = false
         window?.makeKey()
@@ -80,9 +80,9 @@ extension PopupSceneDelegate {
 
 
 
-fileprivate class Window: UIWindow {
+fileprivate class MijickWindow: UIWindow {
     weak var scene: PopupSceneDelegate?
-    
+
     init(scene: PopupSceneDelegate, windowScene: UIWindowScene) {
         super.init(windowScene: windowScene)
         self.scene = scene
@@ -93,7 +93,7 @@ fileprivate class Window: UIWindow {
 }
 
 // MARK: Implementation
-extension Window {
+extension MijickWindow {
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
         if #available(iOS 26, *) { point_iOS26(inside: point, with: event) }
         else if #available(iOS 18, *) { point_iOS18(inside: point, with: event) }
@@ -112,7 +112,7 @@ extension Window {
 }
 
 // MARK: Point
-private extension Window {
+private extension MijickWindow {
     @available(iOS 26, *)
     func point_iOS26(inside point: CGPoint, with event: UIEvent?) -> Bool {
         super.point(inside: point, with: event)
@@ -129,7 +129,7 @@ private extension Window {
 }
 
 // MARK: Hit Test
-private extension Window {
+private extension MijickWindow {
     @available(iOS 26, *)
     func hitTest_iOS26(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         guard let rootView = self.rootViewController?.view else { return nil }
@@ -156,7 +156,7 @@ private extension Window {
 // MARK: Hit Test Helper
 // Based on philip_trauner solution: https://forums.developer.apple.com/forums/thread/762292?answerId=803885022#803885022
 @available(iOS 18, *)
-private extension Window {
+private extension MijickWindow {
     func hitTestHelper(_ point: CGPoint, with event: UIEvent?, view: UIView, depth: Int = 0) -> HitTestResult? {
         view.subviews.reversed().reduce(nil) { deepest, subview in let convertedPoint = view.convert(point, to: subview)
             guard shouldCheckSubview(subview, convertedPoint: convertedPoint, event: event) else { return deepest }
@@ -167,7 +167,7 @@ private extension Window {
     }
 }
 @available(iOS 18, *)
-private extension Window {
+private extension MijickWindow {
     func shouldCheckSubview(_ subview: UIView, convertedPoint: CGPoint, event: UIEvent?) -> Bool {
         subview.isUserInteractionEnabled &&
         subview.isHidden == false &&
@@ -188,7 +188,7 @@ private extension Window {
     }
 }
 @available(iOS 18, *)
-private extension Window {
+private extension MijickWindow {
     typealias HitTestResult = (view: UIView, depth: Int)
 }
 #endif
