@@ -61,7 +61,8 @@ extension AnyPopup {
     func updatedEnvironmentObject(_ environmentObject: some ObservableObject) -> AnyPopup { updated { $0._body = .init(_body.environmentObject(environmentObject)) }}
     func updatedKeyboardDismissal(_ shouldDismiss: Bool) -> AnyPopup { updated { $0.shouldDismissKeyboardOnPopupToggle = shouldDismiss }}
     func startDismissTimerIfNeeded(_ popupStack: PopupStack) -> AnyPopup { updated { $0._dismissTimer?.schedule { popupStack.modify(.removePopup(self)) }}}
-    func updatedAnchorFrameProvider(_ provider: @escaping () -> CGRect) -> AnyPopup { updated { $0.config.anchorFrameProvider = .init(closure: provider) }}
+    func updatedAnchorID(_ anchorID: String) -> AnyPopup { updated { $0.config.anchorID = anchorID }}
+    func updatedAnchorFrame(_ frame: CGRect) -> AnyPopup { updated { $0.config.anchorFrame = frame }}
 }
 private extension AnyPopup {
     func updated(_ customBuilder: (inout AnyPopup) -> ()) -> AnyPopup {

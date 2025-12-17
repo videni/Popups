@@ -11,18 +11,6 @@
 
 import SwiftUI
 
-/// Wrapper to bypass Sendable compiler checks for anchor frame closure.
-///
-/// This is safe because:
-/// 1. The closure only captures @State variables which are main-thread isolated in SwiftUI
-/// 2. The closure is only called from UI layer (main thread) in calculatePopupPosition()
-/// 3. No actual cross-thread access occurs - the Sendable requirement is only for
-///    passing AnyPopup through async boundaries, not for concurrent execution
-struct AnchorFrameProvider: @unchecked Sendable {
-    let closure: () -> CGRect
-    func callAsFunction() -> CGRect { closure() }
-}
-
 struct AnyPopupConfig: LocalConfig, Sendable { init() {}
     // MARK: Content
     var alignment: PopupAlignment = .center
@@ -40,8 +28,17 @@ struct AnyPopupConfig: LocalConfig, Sendable { init() {}
     var dragGestureAreaSize: CGFloat = 0
 
     // MARK: Anchored-specific
-    var anchorFrameProvider: AnchorFrameProvider? = nil
-    var anchorFrame: CGRect { anchorFrameProvider?() ?? .zero }
+    var anchorID: String? = nil  // ID for AnchorRegistry lookup
+    var anchorFrame: CGRect? = nil  // Static anchor frame (alternative to anchorID)
+    /// Returns the anchor frame - uses static frame if set, otherwise fetches from registry
+    func getAnchorFrame() -> CGRect {
+        if let staticFrame = anchorFrame {
+            return staticFrame
+        } else if let anchorID = anchorID {
+            return AnchorRegistry.frame(forKey: anchorID)
+        }
+        return .zero
+    }
     var originAnchor: PopupAnchorPoint = .bottom
     var popupAnchor: PopupAnchorPoint = .top
     var anchorOffset: CGPoint = .zero

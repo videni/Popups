@@ -94,7 +94,7 @@ extension VM.AnchoredStack {
     /// Calculates the position for the popup based on anchor frame and anchor points
     func calculatePopupPosition(for popup: AnyPopup, popupSize: CGSize, containerSize: CGSize = .zero) -> CGPoint {
         let config = popup.config
-        let anchorFrame = config.anchorFrame
+        let anchorFrame = config.getAnchorFrame()
 
         // Calculate origin point on the anchor view
         let originPoint = calculateAnchorPoint(for: config.originAnchor, in: anchorFrame)
