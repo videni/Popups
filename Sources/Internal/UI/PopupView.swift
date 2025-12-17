@@ -96,7 +96,8 @@ private extension PopupView {
         await updateViewModels { $0.setup(updatePopupAction: updatePopup, closePopupAction: closePopup) }
     }}
     func onScreenChange(_ screenReader: GeometryProxy) { Task {
-        await updateViewModels { await $0.updateScreen(screenHeight: screenReader.size.height + screenReader.safeAreaInsets.top + screenReader.safeAreaInsets.bottom, screenSafeArea: screenReader.safeAreaInsets) }
+        let screenHeight = screenReader.size.height + screenReader.safeAreaInsets.top + screenReader.safeAreaInsets.bottom
+        await updateViewModels { await $0.updateScreen(screenHeight: screenHeight, screenSafeArea: screenReader.safeAreaInsets) }
     }}
     func onPopupsHeightChange(_ p: Any) { Task {
         await updateViewModels { await $0.updatePopups(stack.popups) }

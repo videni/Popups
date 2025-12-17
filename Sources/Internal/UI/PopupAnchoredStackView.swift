@@ -17,11 +17,23 @@ class AnchoredPopupsContainer: UIView {
 
     private var hostingController: UIHostingController<AnyView>?
     private var popupModel = AnchoredPopupModel()
+    private var lastBoundsSize: CGSize = .zero
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        guard bounds.size != lastBoundsSize else { return }
+        lastBoundsSize = bounds.size
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.popupModel.containerSize = self.bounds.size
+        }
+    }
 
     /// Returns true only if touch is inside a popup frame
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-        for (_, frame) in popupModel.popupFrames {
-            if frame.contains(point) {
+        for popup in popupModel.popups {
+            if let frame = popupModel.frame(for: popup), frame.contains(point) {
                 return true
             }
         }
@@ -30,30 +42,17 @@ class AnchoredPopupsContainer: UIView {
 
     /// Returns hit view only if touch is inside a popup frame, otherwise passes through
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-        for (_, frame) in popupModel.popupFrames {
-            if frame.contains(point) {
-                // Touch inside popup, let UIHostingController handle it
+        for popup in popupModel.popups {
+            if let frame = popupModel.frame(for: popup), frame.contains(point) {
                 return hostingController?.view.hitTest(point, with: event)
             }
         }
-        // Touch outside all popups, pass through
         return nil
     }
 
     /// Updates popups in the container
     func updatePopups(_ popups: [AnyPopup], viewModel: VM.AnchoredStack) {
-        // Clean up frames for removed popups
-        let currentIds = Set(popups.map { $0.id.rawValue })
-        let existingIds = Set(popupModel.popupFrames.keys)
-        for id in existingIds.subtracting(currentIds) {
-            popupModel.popupFrames.removeValue(forKey: id)
-            popupModel.popupSizes.removeValue(forKey: id)
-        }
-
-        popupModel.popups = popups
-        popupModel.viewModel = viewModel
-
-        // Create hosting controller if needed
+        // Create hosting controller if needed (sync, only once)
         if hostingController == nil {
             let containerView = AnchoredPopupContainerView(model: popupModel)
             let hc = UIHostingController(rootView: AnyView(containerView))
@@ -62,6 +61,20 @@ class AnchoredPopupsContainer: UIView {
             hc.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
             addSubview(hc.view)
             hostingController = hc
+        }
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+
+            // Clean up sizes for removed popups
+            let currentIds = Set(popups.map { $0.id.rawValue })
+            let existingIds = Set(self.popupModel.popupSizes.keys)
+            for id in existingIds.subtracting(currentIds) {
+                self.popupModel.popupSizes.removeValue(forKey: id)
+            }
+
+            self.popupModel.popups = popups
+            self.popupModel.viewModel = viewModel
         }
     }
 
@@ -87,11 +100,26 @@ class AnchoredPopupsContainer: UIView {
 
 // MARK: - Popup Model (ObservableObject for SwiftUI)
 
+@MainActor
 private class AnchoredPopupModel: ObservableObject {
     @Published var popups: [AnyPopup] = []
     @Published var popupSizes: [String: CGSize] = [:]
-    @Published var popupFrames: [String: CGRect] = [:]  // Store frame for hitTest
+    @Published var containerSize: CGSize = .zero
     var viewModel: VM.AnchoredStack?
+
+    /// Calculate frame for popup (called during render, not stored)
+    func frame(for popup: AnyPopup) -> CGRect? {
+        let popupId = popup.id.rawValue
+        guard let size = popupSizes[popupId],
+              let viewModel = viewModel else { return nil }
+
+        let position = viewModel.calculatePopupPosition(
+            for: popup,
+            popupSize: size,
+            containerSize: containerSize
+        )
+        return CGRect(origin: position, size: size)
+    }
 }
 
 // MARK: - SwiftUI Container View
@@ -100,43 +128,26 @@ private struct AnchoredPopupContainerView: View {
     @ObservedObject var model: AnchoredPopupModel
 
     var body: some View {
+        // Reference containerSize to trigger re-render when it changes
+        let _ = model.containerSize
+
         ZStack(alignment: .topLeading) {
             ForEach(model.popups, id: \.self) { popup in
                 let popupId = popup.id.rawValue
-                let hasSize = model.popupSizes[popupId] != nil
+                let frame = model.frame(for: popup)
 
                 PopupContentView(popup: popup, viewModel: model.viewModel)
-                    .opacity(hasSize ? 1 : 0)
+                    .opacity(frame != nil ? 1 : 0)
                     .sizeReader { size in
                         if model.popupSizes[popupId] != size {
                             model.popupSizes[popupId] = size
                         }
                     }
-                    .offset(popupOffset(for: popup))
+                    .offset(x: frame?.origin.x ?? 0, y: frame?.origin.y ?? 0)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .edgesIgnoringSafeArea(.all)
-    }
-
-    /// Calculate offset for popup positioning and store frame for hitTest
-    private func popupOffset(for popup: AnyPopup) -> CGSize {
-        let popupId = popup.id.rawValue
-        guard let size = model.popupSizes[popupId], let viewModel = model.viewModel else {
-            return .zero
-        }
-
-        let position = viewModel.calculatePopupPosition(for: popup, popupSize: size)
-
-        // Store frame for hitTest
-        let frame = CGRect(origin: position, size: size)
-        if model.popupFrames[popupId] != frame {
-            DispatchQueue.main.async {
-                self.model.popupFrames[popupId] = frame
-            }
-        }
-
-        return CGSize(width: position.x, height: position.y)
     }
 }
 
