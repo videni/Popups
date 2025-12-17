@@ -54,4 +54,15 @@ public extension PopupStack {
      - Important: Make sure you use the correct **popupStackID** from which you want to remove the popups.
      */
     @MainActor static func dismissAllPopups(popupStackID: PopupStackID = .shared) async { await fetch(id: popupStackID)?.modify(.removeAllPopups) }
+
+    /**
+     Dismisses all the popups except those with the specified identifiers.
+
+     - Parameters:
+        - ids: Identifiers of the popups to keep on the stack.
+        - popupStackID: The identifier for which the popup was presented. For more information, see ``Popup/present(popupStackID:)``.
+
+     - Important: Make sure you use the correct **popupStackID** from which you want to remove the popups.
+     */
+    @MainActor static func dismissAllPopups(excluding ids: [String], popupStackID: PopupStackID = .shared) async { await fetch(id: popupStackID)?.modify(.removeAllPopupsExcluding(ids)) }
 }

@@ -54,4 +54,15 @@ public extension View {
      - Important: Make sure you use the correct **popupStackID** from which you want to remove the popups.
      */
     @MainActor func dismissAllPopups(popupStackID: PopupStackID = .shared) async { await PopupStack.dismissAllPopups(popupStackID: popupStackID) }
+
+    /**
+     Dismisses all the popups except those with the specified identifiers.
+
+     - Parameters:
+        - ids: Identifiers of the popups to keep on the stack.
+        - popupStackID: The identifier for which the popup was presented. For more information, see ``Popup/present(popupStackID:)``.
+
+     - Important: Make sure you use the correct **popupStackID** from which you want to remove the popups.
+     */
+    @MainActor func dismissAllPopups(excluding ids: [String], popupStackID: PopupStackID = .shared) async { await PopupStack.dismissAllPopups(excluding: ids, popupStackID: popupStackID) }
 }
