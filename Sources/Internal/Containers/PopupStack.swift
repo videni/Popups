@@ -34,7 +34,7 @@ extension PopupStack {
 // MARK: Modify
 extension PopupStack { enum StackOperation {
     case insertPopup(AnyPopup)
-    case removeLastPopup, removePopup(AnyPopup), removeAllPopupsOfType(any Popup.Type), removeAllPopupsWithID(String), removeAllPopups
+    case removeLastPopup, removePopup(AnyPopup), removeAllPopupsOfType(any Popup.Type), removeAllPopupsWithID(String), removeAllPopups, removeAllPopupsExcluding([String])
 }}
 extension PopupStack {
     func modify(_ operation: StackOperation) { Task {
@@ -67,6 +67,7 @@ private extension PopupStack {
         case .removeAllPopupsOfType(let popupType): await removedAllPopupsOfType(popupType)
         case .removeAllPopupsWithID(let id): await removedAllPopupsWithID(id)
         case .removeAllPopups: await removedAllPopups()
+        case .removeAllPopupsExcluding(let excludedIDs): await removedAllPopupsExcluding(excludedIDs)
     }}
     nonisolated func getNewPriority(_ newPopups: [AnyPopup]) async -> StackPriority {
         await priority.reshuffled(newPopups)
@@ -99,6 +100,11 @@ private extension PopupStack {
     }}
     nonisolated func removedAllPopups() async -> [AnyPopup] {
         []
+    }
+    nonisolated func removedAllPopupsExcluding(_ excludedIDs: [String]) async -> [AnyPopup] {
+        await popups.filter { popup in
+            excludedIDs.contains { popup.id.isSameType(as: $0) }
+        }
     }
 }
 
