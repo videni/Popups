@@ -16,7 +16,7 @@ struct StackPriority: Equatable, Sendable {
     var center: CGFloat { values[1] }
     var bottom: CGFloat { values[2] }
     var anchored: CGFloat { values[3] }
-    var overlay: CGFloat { 1 }
+    var overlay: CGFloat { (values.min() ?? 0) - 1 }
 
     private var values: [CGFloat] = [0, 0, 0, 0]
 }
