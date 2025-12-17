@@ -138,7 +138,13 @@ private extension Window {
     }
 
     func handleAnchoredPopupHitTest(_ point: CGPoint, with event: UIEvent?) -> AnchoredHitTestResult {
-        guard let container = AnchoredPopupsContainer.shared, !container.subviews.isEmpty else {
+        // Check if there are any anchored popups displayed
+        let anchoredPopups = PopupStackContainer.stacks.first?.popups.filter { $0.config.alignment == .anchored } ?? []
+        guard !anchoredPopups.isEmpty else {
+            return .noAnchoredPopup
+        }
+
+        guard let container = AnchoredPopupsContainer.shared else {
             return .noAnchoredPopup
         }
 
@@ -148,8 +154,7 @@ private extension Window {
         }
 
         // Touch outside AnchoredPopup - check if pass-through is enabled
-        let anchoredPopups = PopupStackContainer.stacks.first?.popups.filter { $0.config.alignment == .anchored }
-        if let lastAnchored = anchoredPopups?.last,
+        if let lastAnchored = anchoredPopups.last,
            lastAnchored.config.isTapOutsidePassThroughEnabled {
             return .passThrough
         }
