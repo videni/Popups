@@ -92,7 +92,7 @@ extension VM.AnchoredStack {
 // MARK: Position Calculation
 extension VM.AnchoredStack {
     /// Calculates the position for the popup based on anchor frame and anchor points
-    func calculatePopupPosition(for popup: AnyPopup, popupSize: CGSize) -> CGPoint {
+    func calculatePopupPosition(for popup: AnyPopup, popupSize: CGSize, containerSize: CGSize = .zero) -> CGPoint {
         let config = popup.config
         let anchorFrame = config.anchorFrame
 
@@ -102,11 +102,66 @@ extension VM.AnchoredStack {
         // Calculate the offset needed based on popup anchor point
         let popupOffset = calculatePopupOffset(for: config.popupAnchor, popupSize: popupSize)
 
-        // Final position = origin point - popup offset + user offset
-        return CGPoint(
+        // Initial position
+        var popoverFrame = CGRect(
             x: originPoint.x - popupOffset.x + config.anchorOffset.x,
-            y: originPoint.y - popupOffset.y + config.anchorOffset.y
+            y: originPoint.y - popupOffset.y + config.anchorOffset.y,
+            width: popupSize.width,
+            height: popupSize.height
         )
+
+        // Apply boundary avoidance
+        popoverFrame = applyBoundaryAvoidance(frame: popoverFrame, config: config, screenSize: containerSize)
+
+        return popoverFrame.origin
+    }
+
+    /// Keeps popup within screen bounds based on configured edge constraints
+    private func applyBoundaryAvoidance(frame: CGRect, config: AnyPopupConfig, screenSize: CGSize) -> CGRect {
+        let edges = config.constrainedEdges
+
+        // No constraints, return original frame
+        guard !edges.isEmpty else { return frame }
+
+        // Skip if screen size not initialized
+        guard screenSize.width > 0, screenSize.height > 0 else { return frame }
+
+        var popoverFrame = frame
+        let padding = config.edgePadding
+
+        // Horizontal constraint
+        if edges.contains(.horizontal) {
+            let minX = screen.safeArea.leading + padding
+            let maxX = screenSize.width - screen.safeArea.trailing - padding
+
+            // Left edge overflow
+            if popoverFrame.origin.x < minX {
+                popoverFrame.origin.x = minX
+            }
+            // Right edge overflow
+            if popoverFrame.maxX > maxX {
+                let difference = popoverFrame.maxX - maxX
+                popoverFrame.origin.x -= difference
+            }
+        }
+
+        // Vertical constraint
+        if edges.contains(.vertical) {
+            let minY = screen.safeArea.top + padding
+            let maxY = screenSize.height - screen.safeArea.bottom - padding
+
+            // Top edge overflow
+            if popoverFrame.origin.y < minY {
+                popoverFrame.origin.y = minY
+            }
+            // Bottom edge overflow
+            if popoverFrame.maxY > maxY {
+                let difference = popoverFrame.maxY - maxY
+                popoverFrame.origin.y -= difference
+            }
+        }
+
+        return popoverFrame
     }
 
     /// Calculates a point on the anchor frame based on the anchor point type

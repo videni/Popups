@@ -41,29 +41,32 @@ public extension AnchoredPopup {
      Presents the anchored popup positioned relative to a source view frame.
 
      - Parameters:
-        - anchorFrame: The frame of the source view to anchor the popup to (in global coordinates).
+        - anchorFrameProvider: A closure that returns the frame of the source view (in global coordinates).
+          The closure is called each time the popup position needs to be recalculated.
+        - customID: Optional custom identifier for the popup.
         - popupStackID: The identifier registered in one of the application windows in which the popup is to be displayed.
 
-     - Important: The **anchorFrame** should be in global screen coordinates. Use `.frameReader` or `GeometryReader` to obtain the frame.
+     - Important: The frame returned by **anchorFrameProvider** should be in global screen coordinates.
+       Use `.frameReader` or `GeometryReader` to obtain the frame.
 
      ## Usage
      ```swift
      @State private var buttonFrame: CGRect = .zero
 
      Button("Show") {
-         Task { await MyAnchoredPopup().present(anchoredTo: buttonFrame) }
+         Task { await MyAnchoredPopup().present(anchoredTo: { buttonFrame }) }
      }
      .frameReader { frame in
          buttonFrame = frame
      }
      ```
      */
-    @MainActor func present(anchoredTo anchorFrame: CGRect, customID: String? = nil, popupStackID: PopupStackID = .shared) async {
+    @MainActor func present(anchoredTo anchorFrameProvider: @escaping () -> CGRect, customID: String? = nil, popupStackID: PopupStackID = .shared) async {
         var popup = await AnyPopup(self)
         if let customID = customID {
             popup = await popup.updatedID(customID)
         }
-        popup = popup.updatedAnchorFrame(anchorFrame)
+        popup = popup.updatedAnchorFrameProvider(anchorFrameProvider)
         await PopupStack.fetch(id: popupStackID)?.modify(.insertPopup(popup))
     }
 }
