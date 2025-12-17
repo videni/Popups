@@ -58,8 +58,12 @@ public extension AnchoredPopup {
      }
      ```
      */
-    @MainActor func present(anchoredTo anchorFrame: CGRect, popupStackID: PopupStackID = .shared) async {
-        let popup = await AnyPopup(self).updatedAnchorFrame(anchorFrame)
+    @MainActor func present(anchoredTo anchorFrame: CGRect, customID: String? = nil, popupStackID: PopupStackID = .shared) async {
+        var popup = await AnyPopup(self)
+        if let customID = customID {
+            popup = await popup.updatedID(customID)
+        }
+        popup = popup.updatedAnchorFrame(anchorFrame)
         await PopupStack.fetch(id: popupStackID)?.modify(.insertPopup(popup))
     }
 }
