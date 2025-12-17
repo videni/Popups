@@ -59,35 +59,66 @@ public extension Popup {
 // MARK: Anchored Popup Present
 public extension AnchoredPopup {
     /**
-     Presents the anchored popup positioned relative to a source view frame.
+     Presents the anchored popup positioned relative to a tracked anchor view.
+
+     Use this with `.trackAnchor(_:)` modifier to track the source view's frame.
 
      - Parameters:
-        - anchorFrameProvider: A closure that returns the frame of the source view (in global coordinates).
-          The closure is called each time the popup position needs to be recalculated.
-        - customID: Optional custom identifier for the popup.
-        - popupStackID: The identifier registered in one of the application windows in which the popup is to be displayed.
-
-     - Important: The frame returned by **anchorFrameProvider** should be in global screen coordinates.
-       Use `.frameReader` or `GeometryReader` to obtain the frame.
+        - anchorID: The ID used in `.trackAnchor(_:)` on the source view.
+        - customID: Optional custom identifier for the popup (for dismiss management). Defaults to anchorID.
+        - popupStackID: The identifier registered in one of the application windows.
 
      ## Usage
      ```swift
-     @State private var buttonFrame: CGRect = .zero
+     // Track the button
+     Button("Pen") { ... }
+         .trackAnchor("pen")
 
-     Button("Show") {
-         Task { await MyAnchoredPopup().present(anchoredTo: { buttonFrame }) }
-     }
-     .frameReader { frame in
-         buttonFrame = frame
-     }
+     // Present popup anchored to it
+     MyPopup().present(anchoredTo: "pen")
+
+     // With custom ID for dismiss management
+     MyPopup().present(anchoredTo: "pen", customID: "penPopup")
      ```
      */
-    @MainActor func present(anchoredTo anchorFrameProvider: @escaping () -> CGRect, customID: String? = nil, popupStackID: PopupStackID = .shared) async {
+    @MainActor func present(
+        anchoredTo anchorID: String,
+        customID: String? = nil,
+        popupStackID: PopupStackID = .shared
+    ) async {
+        var popup = await AnyPopup(self)
+        // Use customID if provided, otherwise default to anchorID
+        popup = await popup.updatedID(customID ?? anchorID)
+        popup = popup.updatedAnchorID(anchorID)
+        await PopupStack.fetch(id: popupStackID)?.modify(.insertPopup(popup))
+        makePopupWindowKey()
+    }
+
+    /**
+     Presents the anchored popup positioned relative to a static anchor frame.
+
+     Use this for dynamic scenarios where you have a computed frame (e.g., list items).
+
+     - Parameters:
+        - anchorFrame: The frame of the anchor view in global coordinates.
+        - customID: Optional custom identifier for the popup (for dismiss management).
+        - popupStackID: The identifier registered in one of the application windows.
+
+     ## Usage
+     ```swift
+     MyPopup().present(anchoredTo: buttonFrame, customID: "menu")
+     ```
+     */
+    @MainActor func present(
+        anchoredTo anchorFrame: CGRect,
+        customID: String? = nil,
+        popupStackID: PopupStackID = .shared
+    ) async {
         var popup = await AnyPopup(self)
         if let customID = customID {
             popup = await popup.updatedID(customID)
         }
-        popup = popup.updatedAnchorFrameProvider(anchorFrameProvider)
+        popup = popup.updatedAnchorFrame(anchorFrame)
         await PopupStack.fetch(id: popupStackID)?.modify(.insertPopup(popup))
         makePopupWindowKey()
     }
