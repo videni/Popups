@@ -161,16 +161,25 @@ private extension Window {
         return .block
     }
 
+    /// Check if there are non-anchored popups (BottomPopup, CenterPopup, etc.)
+    func hasNonAnchoredPopups() -> Bool {
+        let nonAnchoredPopups = PopupStackContainer.stacks.first?.popups.filter { $0.config.alignment != .anchored } ?? []
+        return !nonAnchoredPopups.isEmpty
+    }
+
     @available(iOS 26, *)
     func hitTest_iOS26(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         switch handleAnchoredPopupHitTest(point, with: event) {
         case .hit(let view): return view
-        case .passThrough: return nil
+        case .passThrough:
+            // If no other popups, pass through to app
+            if !hasNonAnchoredPopups() { return nil }
+            // Otherwise continue to check other popups
         case .block: return rootViewController?.view
         case .noAnchoredPopup: break
         }
 
-        // No AnchoredPopup displayed, use original logic (for BottomPopup, CenterPopup, etc.)
+        // Check other popups (BottomPopup, CenterPopup, etc.)
         guard let rootView = rootViewController?.view else { return nil }
         guard PopupStackContainer.stacks.first?.popups.last != nil else { return nil }
 
@@ -188,7 +197,10 @@ private extension Window {
     func hitTest_iOS18(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         switch handleAnchoredPopupHitTest(point, with: event) {
         case .hit(let view): return view
-        case .passThrough: return nil
+        case .passThrough:
+            // If no other popups, pass through to app
+            if !hasNonAnchoredPopups() { return nil }
+            // Otherwise continue to check other popups
         case .block: return rootViewController?.view
         case .noAnchoredPopup: break
         }
@@ -200,7 +212,10 @@ private extension Window {
     func hitTest_iOS17(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         switch handleAnchoredPopupHitTest(point, with: event) {
         case .hit(let view): return view
-        case .passThrough: return nil
+        case .passThrough:
+            // If no other popups, pass through to app
+            if !hasNonAnchoredPopups() { return nil }
+            // Otherwise continue to check other popups
         case .block: return rootViewController?.view
         case .noAnchoredPopup: break
         }
