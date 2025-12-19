@@ -183,12 +183,6 @@ public extension LocalConfigAnchored {
     /// Distance of the popup from its edges.
     func popupPadding(_ value: EdgeInsets) -> Self { self.popupPadding = value; return self }
 
-    /// Corner radius of the background of the active popup.
-    func cornerRadius(_ value: CGFloat) -> Self { self.cornerRadius = value; return self }
-
-    /// Background color of the popup.
-    func backgroundColor(_ color: Color) -> Self { self.backgroundColor = color; return self }
-
     /// The color of the overlay covering the view behind the popup.
     func overlayColor(_ color: Color) -> Self { self.overlayColor = color; return self }
 
