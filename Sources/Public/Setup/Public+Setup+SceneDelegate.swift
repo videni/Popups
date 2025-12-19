@@ -155,7 +155,7 @@ private extension MijickWindow {
 
         // Touch outside AnchoredPopup - check if pass-through is enabled
         if let lastAnchored = anchoredPopups.last,
-           lastAnchored.config.isTapOutsidePassThroughEnabled {
+           lastAnchored.config.tapOutsideBehavior == .passThrough {
             return .passThrough
         }
         return .block

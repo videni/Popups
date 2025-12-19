@@ -185,7 +185,4 @@ public extension LocalConfigAnchored {
 
     /// The color of the overlay covering the view behind the popup.
     func overlayColor(_ color: Color) -> Self { self.overlayColor = color; return self }
-
-    /// If enabled, dismisses the active popup when touched outside its area.
-    func tapOutsideToDismissPopup(_ value: Bool) -> Self { self.isTapOutsideToDismissEnabled = value; return self }
 }
