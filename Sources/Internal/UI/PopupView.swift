@@ -142,6 +142,8 @@ private extension PopupView {
     }
     var tapOutsidePassThrough: Bool {
         guard let config = stack.popups.last?.config else { return false }
+        // Only anchored popups support passThrough
+        guard config.alignment == .anchored else { return false }
         return config.tapOutsideBehavior == .passThrough
     }
 }
