@@ -70,6 +70,7 @@ private extension PopupView {
     func createOverlayView() -> some View {
         getOverlayColor()
             .contentShape(Rectangle())
+            .allowsHitTesting(!tapOutsidePassThrough)
             .zIndex(stack.priority.overlay)
             .animation(.linear, value: stack.popups)
             .onTapGesture(perform: onTap)
@@ -131,4 +132,5 @@ private extension PopupView {
 }
 private extension PopupView {
     var tapOutsideClosesPopup: Bool { stack.popups.last?.config.isTapOutsideToDismissEnabled ?? false }
+    var tapOutsidePassThrough: Bool { stack.popups.last?.config.isTapOutsidePassThroughEnabled ?? false }
 }
