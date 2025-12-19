@@ -139,37 +139,14 @@ private class AnchoredPopupModel: ObservableObject {
 private struct AnchoredPopupContainerView: View {
     @ObservedObject var model: AnchoredPopupModel
 
-    private var shouldShowOverlay: Bool {
-        guard let lastPopup = model.popups.last else { return false }
-        // Show overlay when not pass through (to receive forwarded events from UIKit)
-        return !lastPopup.config.isTapOutsidePassThroughEnabled
-    }
-
     var body: some View {
         // Reference containerSize to trigger re-render when it changes
         let _ = model.containerSize
 
         ZStack(alignment: .topLeading) {
-            // Overlay for handling tap outside (when not pass through)
-            if shouldShowOverlay {
-                Color.clear
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        // Only dismiss if dismiss is enabled
-                        if let lastPopup = model.popups.last,
-                           lastPopup.config.isTapOutsideToDismissEnabled {
-                            Task { @MainActor in
-                                await PopupStack.dismissLastPopup()
-                            }
-                        }
-                        // If dismiss = false, event is consumed but popup stays open
-                    }
-            }
-
             ForEach(model.popups, id: \.self) { popup in
                 let popupId = popup.id.rawValue
                 let frame = model.frame(for: popup)
-
                 PopupContentView(popup: popup, viewModel: model.viewModel, containerSize: model.containerSize)
                     .opacity(frame != nil ? 1 : 0)
                     .sizeReader { size in
