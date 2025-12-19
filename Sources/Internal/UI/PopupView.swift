@@ -131,6 +131,17 @@ private extension PopupView {
     }
 }
 private extension PopupView {
-    var tapOutsideClosesPopup: Bool { stack.popups.last?.config.isTapOutsideToDismissEnabled ?? false }
-    var tapOutsidePassThrough: Bool { stack.popups.last?.config.isTapOutsidePassThroughEnabled ?? false }
+    var tapOutsideClosesPopup: Bool {
+        guard let config = stack.popups.last?.config else { return false }
+        // For anchored popups, use tapOutsideBehavior
+        if config.alignment == .anchored {
+            return config.tapOutsideBehavior == .dismiss
+        }
+        // For other popups, use isTapOutsideToDismissEnabled
+        return config.isTapOutsideToDismissEnabled
+    }
+    var tapOutsidePassThrough: Bool {
+        guard let config = stack.popups.last?.config else { return false }
+        return config.tapOutsideBehavior == .passThrough
+    }
 }

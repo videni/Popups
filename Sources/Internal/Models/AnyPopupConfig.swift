@@ -42,7 +42,9 @@ struct AnyPopupConfig: LocalConfig, Sendable { init() {}
     var originAnchor: PopupAnchorPoint = .bottom
     var popupAnchor: PopupAnchorPoint = .top
     var anchorOffset: CGPoint = .zero
-    var isTapOutsidePassThroughEnabled: Bool = false
+    var tapOutsideBehavior: TapOutsideBehavior = .dismiss
+    // MARK: Transition
+    var transition: AnyTransition? = nil
     var edgePadding: CGFloat = 16
     var constrainedEdges: Edge.Set = .horizontal
 }
@@ -67,7 +69,7 @@ extension AnyPopupConfig {
             self.originAnchor = anchoredConfig.originAnchor
             self.popupAnchor = anchoredConfig.popupAnchor
             self.anchorOffset = anchoredConfig.offset
-            self.isTapOutsidePassThroughEnabled = anchoredConfig.isTapOutsidePassThroughEnabled
+            self.tapOutsideBehavior = anchoredConfig.tapOutsideBehavior
             self.edgePadding = anchoredConfig.edgePadding
             self.constrainedEdges = anchoredConfig.constrainedEdges
         }

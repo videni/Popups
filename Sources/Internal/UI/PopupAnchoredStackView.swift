@@ -38,9 +38,9 @@ class AnchoredPopupsContainer: UIView {
                 return true
             }
         }
-        // Outside popup - if not pass through, intercept event
+        // Outside popup - if not passThrough, intercept event
         if let lastPopup = popupModel.popups.last,
-           !lastPopup.config.isTapOutsidePassThroughEnabled {
+           lastPopup.config.tapOutsideBehavior != .passThrough {
             return true
         }
         return false  // pass through
@@ -54,12 +54,12 @@ class AnchoredPopupsContainer: UIView {
                 return hostingController?.view.hitTest(point, with: event)
             }
         }
-        // Outside popup - if not pass through, forward to hosting controller (SwiftUI overlay handles)
+        // Outside popup - if not passThrough, forward to hosting controller (SwiftUI overlay handles)
         if let lastPopup = popupModel.popups.last,
-           !lastPopup.config.isTapOutsidePassThroughEnabled {
+           lastPopup.config.tapOutsideBehavior != .passThrough {
             return hostingController?.view.hitTest(point, with: event)
         }
-        return nil  // pass through to shared overlay
+        return nil  // pass through to underlying views
     }
 
     /// Updates popups in the container
