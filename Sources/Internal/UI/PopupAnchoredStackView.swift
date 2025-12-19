@@ -196,7 +196,6 @@ private struct PopupContentView: View {
             .environment(\.popupContainerSize, containerSize)
             .compositingGroup()
             .fixedSize(horizontal: false, vertical: viewModel?.activePopupProperties.verticalFixedSize ?? true)
-            .background(backgroundColor: popup.config.backgroundColor, overlayColor: .clear, corners: viewModel?.activePopupProperties.corners ?? [:])
             .opacity(Double(viewModel?.calculateOpacity(for: popup) ?? 1))
     }
 }
