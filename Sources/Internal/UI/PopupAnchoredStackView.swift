@@ -170,7 +170,7 @@ private struct AnchoredPopupContainerView: View {
                 let popupId = popup.id.rawValue
                 let frame = model.frame(for: popup)
 
-                PopupContentView(popup: popup, viewModel: model.viewModel)
+                PopupContentView(popup: popup, viewModel: model.viewModel, containerSize: model.containerSize)
                     .opacity(frame != nil ? 1 : 0)
                     .sizeReader { size in
                         if model.popupSizes[popupId] != size {
@@ -189,9 +189,11 @@ private struct AnchoredPopupContainerView: View {
 private struct PopupContentView: View {
     let popup: AnyPopup
     var viewModel: VM.AnchoredStack?
+    var containerSize: CGSize
 
     var body: some View {
         popup.body
+            .environment(\.popupContainerSize, containerSize)
             .compositingGroup()
             .fixedSize(horizontal: false, vertical: viewModel?.activePopupProperties.verticalFixedSize ?? true)
             .background(backgroundColor: popup.config.backgroundColor, overlayColor: .clear, corners: viewModel?.activePopupProperties.corners ?? [:])
