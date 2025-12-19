@@ -32,7 +32,7 @@ class AnchoredPopupsContainer: UIView {
 
     /// Returns true if touch should be handled by this container
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-        // Inside popup frame
+        // Only handle touches inside popup frame
         for popup in popupModel.popups {
             if let frame = popupModel.frame(for: popup), frame.contains(point) {
                 return true
