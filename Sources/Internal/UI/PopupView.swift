@@ -74,6 +74,10 @@ private extension PopupView {
             .zIndex(stack.priority.overlay)
             .animation(.linear, value: stack.popups)
             .onTapGesture(perform: onTap)
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 1)
+                    .onEnded { _ in onTap() }
+            )
     }
     func createTopPopupStackView() -> some View {
         PopupVerticalStackView(viewModel: topStackViewModel).zIndex(stack.priority.top)
