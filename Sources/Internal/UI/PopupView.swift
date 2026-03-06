@@ -57,13 +57,18 @@ private extension PopupView {
 }
 private extension PopupView {
     func createPopupStackView() -> some View {
-        ZStack {
-            createOverlayView()
-            createTopPopupStackView()
-            createCenterPopupStackView()
-            createBottomPopupStackView()
-            createAnchoredPopupStackView()
-        }
+        // Overlay is the base view; popup stacks sit on top via .overlay().
+        // This ensures taps on transparent areas of popup stacks fall through
+        // to the overlay's onTapGesture, enabling tap-outside-to-dismiss.
+        createOverlayView()
+            .overlay(
+                ZStack {
+                    createTopPopupStackView()
+                    createCenterPopupStackView()
+                    createBottomPopupStackView()
+                    createAnchoredPopupStackView()
+                }
+            )
     }
 }
 private extension PopupView {
@@ -71,7 +76,6 @@ private extension PopupView {
         getOverlayColor()
             .contentShape(Rectangle())
             .allowsHitTesting(!tapOutsidePassThrough)
-            .zIndex(stack.priority.overlay)
             .animation(.linear, value: stack.popups)
             .onTapGesture(perform: onTap)
             .simultaneousGesture(
