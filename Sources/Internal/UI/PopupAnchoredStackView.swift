@@ -32,38 +32,47 @@ class AnchoredPopupsContainer: UIView {
 
     /// Returns true if touch should be handled by this container
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-        // Only handle touches inside popup frame
-        for popup in popupModel.popups {
-            if let frame = popupModel.frame(for: popup), frame.contains(point) {
-                return true
-            }
-        }
-        // Outside popup:
-        // - .none: intercept (block without dismiss)
-        // - .dismiss/.passThrough: pass through to SwiftUI overlay
-        if let lastPopup = popupModel.popups.last,
-           lastPopup.config.tapOutsideBehavior == .none {
+        guard let lastPopup = popupModel.popups.last else { return false }
+
+        // Check if touch is inside the topmost popup
+        if let lastFrame = popupModel.frame(for: lastPopup), lastFrame.contains(point) {
             return true
         }
-        return false
+
+        // Touch is outside the topmost popup - decide based on its tapOutsideBehavior
+        switch lastPopup.config.tapOutsideBehavior {
+        case .dismiss, .passThrough:
+            // Pass through to SwiftUI overlay for dismiss handling
+            return false
+        case .none:
+            // Block touch - check if inside any other popup frame
+            for popup in popupModel.popups where popup.id.rawValue != lastPopup.id.rawValue {
+                if let frame = popupModel.frame(for: popup), frame.contains(point) {
+                    return true
+                }
+            }
+            return true
+        }
     }
 
     /// Returns hit view for touch handling
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-        // Inside popup frame - forward to hosting controller
-        for popup in popupModel.popups {
-            if let frame = popupModel.frame(for: popup), frame.contains(point) {
-                return hostingController?.view.hitTest(point, with: event)
-            }
-        }
-        // Outside popup:
-        // - .none: forward to hosting controller (blocks event)
-        // - .dismiss/.passThrough: return nil to pass through to SwiftUI overlay
-        if let lastPopup = popupModel.popups.last,
-           lastPopup.config.tapOutsideBehavior == .none {
+        guard let lastPopup = popupModel.popups.last else { return nil }
+
+        // Check if touch is inside the topmost popup
+        if let lastFrame = popupModel.frame(for: lastPopup), lastFrame.contains(point) {
             return hostingController?.view.hitTest(point, with: event)
         }
-        return nil
+
+        // Touch is outside the topmost popup - decide based on its tapOutsideBehavior
+        switch lastPopup.config.tapOutsideBehavior {
+        case .dismiss, .passThrough:
+            // Pass through to SwiftUI overlay
+            return nil
+        case .none:
+            // Block touch - forward to hosting controller
+            return hostingController?.view.hitTest(point, with: event)
+        }
     }
 
     /// Updates popups in the container
