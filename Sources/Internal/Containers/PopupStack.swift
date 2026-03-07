@@ -15,6 +15,7 @@ import SwiftUI
     let id: PopupStackID
     @Published private(set) var popups: [AnyPopup] = []
     @Published private(set) var priority: StackPriority = .init()
+    private var priorityGeneration: UInt64 = 0
 
     private init(id: PopupStackID) { self.id = id }
 }
@@ -77,8 +78,12 @@ private extension PopupStack {
     }
     func updatePriority(_ newPriority: StackPriority, _ oldPopupsCount: Int) async {
         let delayDuration = oldPopupsCount > popups.count ? Animation.duration : 0
+        priorityGeneration &+= 1
+        let myGeneration = priorityGeneration
+
         await Task.sleep(seconds: delayDuration)
 
+        guard myGeneration == priorityGeneration else { return }
         priority = newPriority
     }
 }

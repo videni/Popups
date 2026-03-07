@@ -11,6 +11,7 @@ import SwiftUI
 extension VM { class AnchoredStack: ViewModel { required init() {}
     var alignment: PopupAlignment = .anchored
     var popups: [AnyPopup] = []
+    @Published var popupSizes: [String: CGSize] = [:]
     var activePopupProperties: ActivePopupProperties = .init()
     var screen: Screen = .init()
     var updatePopupAction: ((AnyPopup) async -> ())?

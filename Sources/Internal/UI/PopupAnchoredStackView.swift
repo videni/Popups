@@ -7,137 +7,76 @@
 
 
 import SwiftUI
-import UIKit
 
-// MARK: - Anchored Popups Container
+// MARK: - Anchored Popup Frame Tracker
 
-/// UIKit container with single UIHostingController for all popups
-class AnchoredPopupsContainer: UIView {
-    static var shared: AnchoredPopupsContainer?
+/// Lightweight shared frame tracker for SceneDelegate hit testing.
+/// The SwiftUI view updates frames; MijickWindow reads them for touch routing.
+@MainActor
+class AnchoredPopupFrameTracker {
+    static let shared = AnchoredPopupFrameTracker()
+    private init() {}
 
-    private var hostingController: UIHostingController<AnyView>?
-    private var popupModel = AnchoredPopupModel()
-    private var lastBoundsSize: CGSize = .zero
+    private(set) var frames: [String: CGRect] = [:]
+    private(set) var popups: [AnyPopup] = []
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        guard bounds.size != lastBoundsSize else { return }
-        lastBoundsSize = bounds.size
-
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            self.popupModel.containerSize = self.bounds.size
-        }
+    func update(popups: [AnyPopup], frames: [String: CGRect]) {
+        self.popups = popups
+        self.frames = frames
     }
 
-    /// Returns true if touch should be handled by this container
-    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-        guard let lastPopup = popupModel.popups.last else { return false }
-
-        // Check if touch is inside the topmost popup
-        if let lastFrame = popupModel.frame(for: lastPopup), lastFrame.contains(point) {
-            return true
-        }
-
-        // Touch is outside the topmost popup - decide based on its tapOutsideBehavior
-        switch lastPopup.config.tapOutsideBehavior {
-        case .dismiss, .passThrough:
-            // Pass through to SwiftUI overlay for dismiss handling
-            return false
-        case .none:
-            // Block touch - check if inside any other popup frame
-            for popup in popupModel.popups where popup.id.rawValue != lastPopup.id.rawValue {
-                if let frame = popupModel.frame(for: popup), frame.contains(point) {
-                    return true
-                }
-            }
-            return true
-        }
+    func frame(for popup: AnyPopup) -> CGRect? {
+        frames[popup.id.rawValue]
     }
 
-    /// Returns hit view for touch handling
-    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-        guard let lastPopup = popupModel.popups.last else { return nil }
-
-        // Check if touch is inside the topmost popup
-        if let lastFrame = popupModel.frame(for: lastPopup), lastFrame.contains(point) {
-            return hostingController?.view.hitTest(point, with: event)
-        }
-
-        // Touch is outside the topmost popup - decide based on its tapOutsideBehavior
-        switch lastPopup.config.tapOutsideBehavior {
-        case .dismiss, .passThrough:
-            // Pass through to SwiftUI overlay
-            return nil
-        case .none:
-            // Block touch - forward to hosting controller
-            return hostingController?.view.hitTest(point, with: event)
-        }
-    }
-
-    /// Updates popups in the container
-    func updatePopups(_ popups: [AnyPopup], viewModel: VM.AnchoredStack) {
-        // Create hosting controller if needed (sync, only once)
-        if hostingController == nil {
-            let containerView = AnchoredPopupContainerView(model: popupModel)
-            let hc = UIHostingController(rootView: AnyView(containerView))
-            hc.view.frame = bounds
-            hc.view.backgroundColor = .clear
-            hc.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-            addSubview(hc.view)
-            hostingController = hc
-        }
-
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-
-            // Clean up sizes for removed popups
-            let currentIds = Set(popups.map { $0.id.rawValue })
-            let existingIds = Set(self.popupModel.popupSizes.keys)
-            for id in existingIds.subtracting(currentIds) {
-                self.popupModel.popupSizes.removeValue(forKey: id)
-            }
-
-            self.popupModel.popups = popups
-            self.popupModel.viewModel = viewModel
-        }
-    }
-
-    /// Installs container directly on Window (above rootViewController.view)
-    static func install(on window: UIWindow) {
-        guard shared == nil else { return }
-        let container = AnchoredPopupsContainer()
-        container.backgroundColor = .clear
-        container.translatesAutoresizingMaskIntoConstraints = false
-
-        window.addSubview(container)
-        NSLayoutConstraint.activate([
-            container.topAnchor.constraint(equalTo: window.topAnchor),
-            container.bottomAnchor.constraint(equalTo: window.bottomAnchor),
-            container.leadingAnchor.constraint(equalTo: window.leadingAnchor),
-            container.trailingAnchor.constraint(equalTo: window.trailingAnchor)
-        ])
-        container.setNeedsLayout()
-        window.layoutIfNeeded()
-        shared = container
+    func clear() {
+        popups = []
+        frames = [:]
     }
 }
 
-// MARK: - Popup Model (ObservableObject for SwiftUI)
+// MARK: - Popup Anchored Stack View (Pure SwiftUI)
 
-@MainActor
-private class AnchoredPopupModel: ObservableObject {
-    @Published var popups: [AnyPopup] = []
-    @Published var popupSizes: [String: CGSize] = [:]
-    @Published var containerSize: CGSize = .zero
-    var viewModel: VM.AnchoredStack?
+struct PopupAnchoredStackView: View {
+    @ObservedObject var viewModel: VM.AnchoredStack
 
-    /// Calculate frame for popup (called during render, not stored)
-    func frame(for popup: AnyPopup) -> CGRect? {
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            ForEach(viewModel.popups, id: \.self) { popup in
+                createPopupView(popup)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .ignoresSafeArea()
+        .onChange(of: viewModel.popups) { newPopups in
+            cleanUpRemovedPopups(newPopups)
+            syncFrameTracker()
+        }
+    }
+
+    // MARK: - Private Methods
+
+    private func createPopupView(_ popup: AnyPopup) -> some View {
         let popupId = popup.id.rawValue
-        guard let size = popupSizes[popupId],
-              let viewModel = viewModel else { return nil }
+        let popupFrame = frame(for: popup)
+        let hasFrame = popupFrame != nil
 
+        return popup.body
+            .environment(\.popupContainerSize, containerSize)
+            .compositingGroup()
+            .fixedSize(horizontal: false, vertical: viewModel.activePopupProperties.verticalFixedSize)
+            .opacity(Double(viewModel.calculateOpacity(for: popup)))
+            .sizeReader { size in
+                guard viewModel.popupSizes[popupId] != size else { return }
+                viewModel.popupSizes[popupId] = size
+                syncFrameTracker()
+            }
+            .offset(x: popupFrame?.origin.x ?? 0, y: popupFrame?.origin.y ?? 0)
+            .opacity(hasFrame ? 1 : 0)
+    }
+
+    private func frame(for popup: AnyPopup) -> CGRect? {
+        guard let size = viewModel.popupSizes[popup.id.rawValue] else { return nil }
         let position = viewModel.calculatePopupPosition(
             for: popup,
             popupSize: size,
@@ -145,48 +84,29 @@ private class AnchoredPopupModel: ObservableObject {
         )
         return CGRect(origin: position, size: size)
     }
-}
 
-// MARK: - SwiftUI Container View
+    private var containerSize: CGSize {
+        let screen = viewModel.screen
+        let width = screen.width > 0 ? screen.width : UIScreen.main.bounds.width
+        let height = screen.height > 0 ? screen.height : UIScreen.main.bounds.height
+        return CGSize(width: width, height: height)
+    }
 
-private struct AnchoredPopupContainerView: View {
-    @ObservedObject var model: AnchoredPopupModel
+    private func cleanUpRemovedPopups(_ newPopups: [AnyPopup]) {
+        let currentIds = Set(newPopups.map { $0.id.rawValue })
+        for key in viewModel.popupSizes.keys where !currentIds.contains(key) {
+            viewModel.popupSizes.removeValue(forKey: key)
+        }
+    }
 
-    var body: some View {
-        // Reference containerSize to trigger re-render when it changes
-        let _ = model.containerSize
-
-        ZStack(alignment: .topLeading) {
-            ForEach(model.popups, id: \.self) { popup in
-                let popupId = popup.id.rawValue
-                let frame = model.frame(for: popup)
-                PopupContentView(popup: popup, viewModel: model.viewModel, containerSize: model.containerSize)
-                    .opacity(frame != nil ? 1 : 0)
-                    .sizeReader { size in
-                        if model.popupSizes[popupId] != size {
-                            model.popupSizes[popupId] = size
-                        }
-                    }
-                    .offset(x: frame?.origin.x ?? 0, y: frame?.origin.y ?? 0)
+    private func syncFrameTracker() {
+        var computedFrames: [String: CGRect] = [:]
+        for popup in viewModel.popups {
+            if let f = frame(for: popup) {
+                computedFrames[popup.id.rawValue] = f
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .edgesIgnoringSafeArea(.all)
-    }
-}
-
-/// SwiftUI content for a single popup
-private struct PopupContentView: View {
-    let popup: AnyPopup
-    var viewModel: VM.AnchoredStack?
-    var containerSize: CGSize
-
-    var body: some View {
-        popup.body
-            .environment(\.popupContainerSize, containerSize)
-            .compositingGroup()
-            .fixedSize(horizontal: false, vertical: viewModel?.activePopupProperties.verticalFixedSize ?? true)
-            .opacity(Double(viewModel?.calculateOpacity(for: popup) ?? 1))
+        AnchoredPopupFrameTracker.shared.update(popups: viewModel.popups, frames: computedFrames)
     }
 }
 
@@ -212,58 +132,5 @@ private struct PopupSizePreferenceKey: PreferenceKey {
     static var defaultValue: CGSize { .zero }
     static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
         value = nextValue()
-    }
-}
-
-// MARK: - Popup Anchored Stack View (Triggers installation and updates)
-
-struct PopupAnchoredStackView: View {
-    @ObservedObject var viewModel: VM.AnchoredStack
-
-    var body: some View {
-        AnchoredStackInstaller(viewModel: viewModel)
-            .frame(width: 1, height: 1)
-    }
-}
-
-/// Used to get the current view's window and install the container
-private struct AnchoredStackInstaller: UIViewRepresentable {
-    @ObservedObject var viewModel: VM.AnchoredStack
-
-    func makeUIView(context: Context) -> InstallerView {
-        let view = InstallerView()
-        view.viewModel = viewModel
-        return view
-    }
-
-    func updateUIView(_ uiView: InstallerView, context: Context) {
-        uiView.viewModel = viewModel
-        uiView.updateIfNeeded()
-    }
-}
-
-private class InstallerView: UIView {
-    var viewModel: VM.AnchoredStack?
-
-    override func didMoveToWindow() {
-        super.didMoveToWindow()
-        installContainerIfNeeded()
-        updatePopups()
-    }
-
-    func updateIfNeeded() {
-        installContainerIfNeeded()
-        updatePopups()
-    }
-
-    private func installContainerIfNeeded() {
-        guard AnchoredPopupsContainer.shared == nil, let window = window else { return }
-        AnchoredPopupsContainer.install(on: window)
-    }
-
-    private func updatePopups() {
-        if let viewModel = viewModel {
-            AnchoredPopupsContainer.shared?.updatePopups(viewModel.popups, viewModel: viewModel)
-        }
     }
 }

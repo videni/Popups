@@ -69,8 +69,8 @@ extension ViewModel {
 
 // MARK: Screen
 extension ViewModel {
-    func updateScreen(screenHeight: CGFloat? = nil, screenSafeArea: EdgeInsets? = nil, isKeyboardActive: Bool? = nil) async {
-        screen = await updatedScreenProperties(screenHeight, screenSafeArea, isKeyboardActive)
+    func updateScreen(screenHeight: CGFloat? = nil, screenWidth: CGFloat? = nil, screenSafeArea: EdgeInsets? = nil, isKeyboardActive: Bool? = nil) async {
+        screen = await updatedScreenProperties(screenHeight, screenWidth, screenSafeArea, isKeyboardActive)
         await updateActivePopupProperties()
 
         withAnimation(.transition) { objectWillChange.send() }
@@ -110,8 +110,9 @@ private extension ViewModel {
     func filteredPopups(_ popups: [AnyPopup]) async -> [AnyPopup] {
         popups.filter { $0.config.alignment == alignment }
     }
-    func updatedScreenProperties(_ screenHeight: CGFloat?, _ screenSafeArea: EdgeInsets?, _ isKeyboardActive: Bool?) async -> Screen { .init(
+    func updatedScreenProperties(_ screenHeight: CGFloat?, _ screenWidth: CGFloat?, _ screenSafeArea: EdgeInsets?, _ isKeyboardActive: Bool?) async -> Screen { .init(
         height: screenHeight ?? screen.height,
+        width: screenWidth ?? screen.width,
         safeArea: screenSafeArea ?? screen.safeArea,
         isKeyboardActive: isKeyboardActive ?? screen.isKeyboardActive
     )}

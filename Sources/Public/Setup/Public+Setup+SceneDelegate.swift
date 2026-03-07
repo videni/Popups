@@ -138,27 +138,38 @@ private extension MijickWindow {
     }
 
     func handleAnchoredPopupHitTest(_ point: CGPoint, with event: UIEvent?) -> AnchoredHitTestResult {
-        // Check if there are any anchored popups displayed
-        let anchoredPopups = PopupStackContainer.stacks.first?.popups.filter { $0.config.alignment == .anchored } ?? []
+        let tracker = AnchoredPopupFrameTracker.shared
+        let anchoredPopups = tracker.popups
         guard !anchoredPopups.isEmpty else {
             return .noAnchoredPopup
         }
 
-        guard let container = AnchoredPopupsContainer.shared else {
-            return .noAnchoredPopup
+        // Check if touch is inside any anchored popup frame
+        // Convert point from window coords to screen coords (they're the same for main window)
+        for popup in anchoredPopups.reversed() {
+            if let frame = tracker.frame(for: popup), frame.contains(point) {
+                // Touch is inside an anchored popup — let SwiftUI handle it
+                // Return noAnchoredPopup so MijickWindow falls through to rootView.hitTest
+                // which will find the SwiftUI popup view
+                return .noAnchoredPopup
+            }
         }
 
-        let convertedPoint = convert(point, to: container)
-        if let hit = container.hitTest(convertedPoint, with: event) {
-            return .hit(hit)
+        // Touch is outside all anchored popups — decide based on last popup's tapOutsideBehavior
+        if let lastAnchored = anchoredPopups.last {
+            switch lastAnchored.config.tapOutsideBehavior {
+            case .dismiss:
+                // Return .noAnchoredPopup so MijickWindow falls through to normal hitTest,
+                // which finds the SwiftUI overlay → overlay's onTapGesture fires → dismiss
+                return .noAnchoredPopup
+            case .passThrough:
+                return .passThrough
+            case .none:
+                return .block
+            }
         }
 
-        // Touch outside AnchoredPopup - check if pass-through is enabled
-        if let lastAnchored = anchoredPopups.last,
-           lastAnchored.config.tapOutsideBehavior == .passThrough {
-            return .passThrough
-        }
-        return .block
+        return .noAnchoredPopup
     }
 
     /// Check if there are non-anchored popups (BottomPopup, CenterPopup, etc.)
