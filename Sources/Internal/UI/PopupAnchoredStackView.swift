@@ -73,6 +73,7 @@ struct PopupAnchoredStackView: View {
             }
             .offset(x: popupFrame?.origin.x ?? 0, y: popupFrame?.origin.y ?? 0)
             .opacity(hasFrame ? 1 : 0)
+            .transition(.opacity)
     }
 
     private func frame(for popup: AnyPopup) -> CGRect? {
