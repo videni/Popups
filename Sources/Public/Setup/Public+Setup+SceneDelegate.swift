@@ -166,6 +166,8 @@ private extension MijickWindow {
                 return .passThrough
             case .none:
                 return .block
+            case .dismissUnlessDragging:
+                return TapOutsideBehavior.isDragging ? .passThrough : .noAnchoredPopup
             }
         }
 

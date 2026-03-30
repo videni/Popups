@@ -144,7 +144,7 @@ private extension PopupView {
         guard let config = stack.popups.last?.config else { return false }
         // For anchored popups, use tapOutsideBehavior
         if config.alignment == .anchored {
-            return config.tapOutsideBehavior == .dismiss
+            return config.tapOutsideBehavior == .dismiss || config.tapOutsideBehavior == .dismissUnlessDragging
         }
         // For other popups, use isTapOutsideToDismissEnabled
         return config.isTapOutsideToDismissEnabled

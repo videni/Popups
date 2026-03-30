@@ -16,4 +16,10 @@ public enum TapOutsideBehavior {
     case dismiss
     /// Passes through to underlying views, does not dismiss
     case passThrough
+    /// Dismisses on tap; passes through when `isDragging` is true
+    case dismissUnlessDragging
+
+    /// Set to `true` when a drag operation starts, `false` when it ends.
+    /// Used by `.dismissUnlessDragging` to decide hitTest behavior.
+    public nonisolated(unsafe) static var isDragging: Bool = false
 }
